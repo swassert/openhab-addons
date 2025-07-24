@@ -226,7 +226,10 @@ public class SoulissGatewayHandler extends BaseBridgeHandler {
                     : InetAddress.getByName(gwConfig.gatewayWanAddress);
             var packet = new DatagramPacket(merd, merd.length, serverAddr,
                     SoulissUDPConstants.SOULISS_GATEWAY_DEFAULT_PORT);
-            soulissSendDispatcherRunnable.put(packet, logger);
+            var localSendDispatcher = this.soulissSendDispatcherRunnable;
+            if (localSendDispatcher != null) {
+                localSendDispatcher.put(packet, logger);
+            }
         } catch (IOException e) {
             logger.warn("Error: {} ", e.getMessage());
         }

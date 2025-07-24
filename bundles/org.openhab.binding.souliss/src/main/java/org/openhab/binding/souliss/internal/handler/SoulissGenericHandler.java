@@ -60,7 +60,10 @@ public abstract class SoulissGenericHandler extends BaseThingHandler implements 
 
     protected SoulissGenericHandler(Thing thing) {
         super(thing);
-        this.bridge = (SoulissGatewayHandler) getBridge().getHandler();
+        var b = getBridge();
+        if (b != null) {
+            this.bridge = (SoulissGatewayHandler) b.getHandler();
+        }
     }
 
     /**
@@ -104,7 +107,10 @@ public abstract class SoulissGenericHandler extends BaseThingHandler implements 
         var gwConfig = getGatewayConfig();
         if (gwConfig != null && bridge != null) {
             ArrayList<Byte> macacoFrame = CommonCommands.buildTypicalRequestFrame(gwConfig, this.getNode(), 1);
-            bridge.queueToDispatcher(macacoFrame);
+            var localBridge = this.bridge;
+            if (localBridge != null) {
+                localBridge.queueToDispatcher(macacoFrame);
+            }
         }
     }
 
@@ -116,10 +122,13 @@ public abstract class SoulissGenericHandler extends BaseThingHandler implements 
      */
     public void commandSEND(byte command) {
         var gwConfig = getGatewayConfig();
-        if (gwConfig != null && bridge != null) {
+        if (gwConfig != null) {
             ArrayList<Byte> macacoFrame = CommonCommands.buildFORCEFrame(gwConfig, this.getNode(), this.getSlot(),
                     command);
-            bridge.queueToDispatcher(macacoFrame);
+            var localBridge = this.bridge;
+            if (localBridge != null) {
+                localBridge.queueToDispatcher(macacoFrame);
+            }
         }
     }
 
@@ -127,7 +136,10 @@ public abstract class SoulissGenericHandler extends BaseThingHandler implements 
         var gwConfig = getGatewayConfig();
         if (gwConfig != null && bridge != null) {
             ArrayList<Byte> macacoFrame = CommonCommands.buildFORCEFrame(gwConfig, command, r, g, b);
-            bridge.queueToDispatcher(macacoFrame);
+            var localBridge = this.bridge;
+            if (localBridge != null) {
+                localBridge.queueToDispatcher(macacoFrame);
+            }
         }
     }
 
@@ -136,7 +148,10 @@ public abstract class SoulissGenericHandler extends BaseThingHandler implements 
         if (gwConfig != null && bridge != null) {
             ArrayList<Byte> macacoFrame = CommonCommands.buildFORCEFrameT31SetPoint(gwConfig, this.getNode(),
                     this.getSlot(), command, b1, b2);
-            bridge.queueToDispatcher(macacoFrame);
+            var localBridge = this.bridge;
+            if (localBridge != null) {
+                localBridge.queueToDispatcher(macacoFrame);
+            }
         }
     }
 
@@ -145,7 +160,10 @@ public abstract class SoulissGenericHandler extends BaseThingHandler implements 
         if (gwConfig != null && bridge != null) {
             ArrayList<Byte> macacoFrame = CommonCommands.buildFORCEFrameT61SetPoint(gwConfig, this.getNode(),
                     this.getSlot(), b1, b2);
-            bridge.queueToDispatcher(macacoFrame);
+            var localBridge = this.bridge;
+            if (localBridge != null) {
+                localBridge.queueToDispatcher(macacoFrame);
+            }
         }
     }
 
@@ -167,8 +185,9 @@ public abstract class SoulissGenericHandler extends BaseThingHandler implements 
     }
 
     public @Nullable GatewayConfig getGatewayConfig() {
-        if (bridge != null) {
-            return bridge.getGwConfig();
+        var localBridge = this.bridge;
+        if (localBridge != null) {
+            return localBridge.getGwConfig();
         }
         return null;
     }

@@ -48,7 +48,7 @@ public class SoulissGatewayJobPing implements Runnable {
     private void sendPing() {
         // sending ping packet
         var localGwHandler = this.gwHandler;
-        if (localGwHandler.getGwConfig().gatewayLanAddress.length() > 0) {
+        if (localGwHandler != null && localGwHandler.getGwConfig().gatewayLanAddress.length() > 0) {
             ArrayList<Byte> macacoFrame = CommonCommands.buildPingFrame(localGwHandler.getGwConfig());
             localGwHandler.queueToDispatcher(macacoFrame);
             // ping packet sent
