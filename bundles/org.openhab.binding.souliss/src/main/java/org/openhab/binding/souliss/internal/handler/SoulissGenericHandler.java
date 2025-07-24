@@ -13,6 +13,7 @@
 package org.openhab.binding.souliss.internal.handler;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
@@ -50,8 +51,7 @@ public abstract class SoulissGenericHandler extends BaseThingHandler implements 
 
     private int iSlot;
     private int iNode;
-
-    private final CommonCommands commonCommands = new CommonCommands();
+    private @Nullable SoulissGatewayHandler bridge;
 
     // 0 means that Secure Send is disabled
     boolean bSecureSend = false;
@@ -60,6 +60,7 @@ public abstract class SoulissGenericHandler extends BaseThingHandler implements 
 
     protected SoulissGenericHandler(Thing thing) {
         super(thing);
+        this.bridge = (SoulissGatewayHandler) getBridge().getHandler();
     }
 
     /**
@@ -101,8 +102,9 @@ public abstract class SoulissGenericHandler extends BaseThingHandler implements 
 
     protected synchronized void commandReadNodeTypsStates() {
         var gwConfig = getGatewayConfig();
-        if (gwConfig != null) {
-            commonCommands.sendTypicalRequestFrame(gwConfig, this.getNode(), 1);
+        if (gwConfig != null && bridge != null) {
+            ArrayList<Byte> macacoFrame = CommonCommands.buildTypicalRequestFrame(gwConfig, this.getNode(), 1);
+            bridge.queueToDispatcher(macacoFrame);
         }
     }
 
@@ -114,29 +116,36 @@ public abstract class SoulissGenericHandler extends BaseThingHandler implements 
      */
     public void commandSEND(byte command) {
         var gwConfig = getGatewayConfig();
-        if (gwConfig != null) {
-            commonCommands.sendFORCEFrame(gwConfig, this.getNode(), this.getSlot(), command);
+        if (gwConfig != null && bridge != null) {
+            ArrayList<Byte> macacoFrame = CommonCommands.buildFORCEFrame(gwConfig, this.getNode(), this.getSlot(),
+                    command);
+            bridge.queueToDispatcher(macacoFrame);
         }
     }
 
     public void commandSendRgb(byte command, byte r, byte g, byte b) {
         var gwConfig = getGatewayConfig();
-        if (gwConfig != null) {
-            commonCommands.sendFORCEFrame(gwConfig, command, r, g, b);
+        if (gwConfig != null && bridge != null) {
+            ArrayList<Byte> macacoFrame = CommonCommands.buildFORCEFrame(gwConfig, command, r, g, b);
+            bridge.queueToDispatcher(macacoFrame);
         }
     }
 
     public void commandSEND(byte command, byte b1, byte b2) {
         var gwConfig = getGatewayConfig();
-        if (gwConfig != null) {
-            commonCommands.sendFORCEFrameT31SetPoint(gwConfig, this.getNode(), this.getSlot(), command, b1, b2);
+        if (gwConfig != null && bridge != null) {
+            ArrayList<Byte> macacoFrame = CommonCommands.buildFORCEFrameT31SetPoint(gwConfig, this.getNode(),
+                    this.getSlot(), command, b1, b2);
+            bridge.queueToDispatcher(macacoFrame);
         }
     }
 
     public void commandSEND(byte b1, byte b2) {
         var gwConfig = getGatewayConfig();
-        if (gwConfig != null) {
-            commonCommands.sendFORCEFrameT61SetPoint(gwConfig, this.getNode(), this.getSlot(), b1, b2);
+        if (gwConfig != null && bridge != null) {
+            ArrayList<Byte> macacoFrame = CommonCommands.buildFORCEFrameT61SetPoint(gwConfig, this.getNode(),
+                    this.getSlot(), b1, b2);
+            bridge.queueToDispatcher(macacoFrame);
         }
     }
 
@@ -158,12 +167,8 @@ public abstract class SoulissGenericHandler extends BaseThingHandler implements 
     }
 
     public @Nullable GatewayConfig getGatewayConfig() {
-        var bridge = getBridge();
         if (bridge != null) {
-            SoulissGatewayHandler bridgeHandler = (SoulissGatewayHandler) bridge.getHandler();
-            if (bridgeHandler != null) {
-                return bridgeHandler.getGwConfig();
-            }
+            return bridge.getGwConfig();
         }
         return null;
     }

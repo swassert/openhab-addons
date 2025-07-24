@@ -39,8 +39,6 @@ import org.openhab.binding.souliss.internal.handler.SoulissT22Handler;
 import org.openhab.binding.souliss.internal.handler.SoulissT31Handler;
 import org.openhab.binding.souliss.internal.handler.SoulissT41Handler;
 import org.openhab.binding.souliss.internal.handler.SoulissT42Handler;
-import org.openhab.binding.souliss.internal.handler.SoulissT52Handler;
-import org.openhab.binding.souliss.internal.handler.SoulissT53Handler;
 import org.openhab.binding.souliss.internal.handler.SoulissT5nHandler;
 import org.openhab.binding.souliss.internal.handler.SoulissT61Handler;
 import org.openhab.binding.souliss.internal.handler.SoulissT62Handler;
@@ -487,29 +485,15 @@ public class UDPDecoder {
                                         break;
                                 }
                                 break;
-                            case SoulissBindingConstants.T52:
-                                logger.debug("Decoding T52 packet");
-                                logger.debug("Float value: {}", getFloatAtSlot(mac, slot));
-                                if (!Float.isNaN(getFloatAtSlot(mac, slot))) {
-                                    ((SoulissT52Handler) handler).setFloatValue(getFloatAtSlot(mac, slot));
-                                }
-                                break;
-
-                            case SoulissBindingConstants.T53:
-                                logger.debug("Decoding T53 packet");
-                                logger.debug("Float value: {}", getFloatAtSlot(mac, slot));
-                                if (!Float.isNaN(getFloatAtSlot(mac, slot))) {
-                                    ((SoulissT53Handler) handler).setFloatValue(getFloatAtSlot(mac, slot));
-                                }
-                                break;
                             case SoulissBindingConstants.T51:
+                            case SoulissBindingConstants.T52:
+                            case SoulissBindingConstants.T53:
                             case SoulissBindingConstants.T54:
                             case SoulissBindingConstants.T55:
                             case SoulissBindingConstants.T56:
                             case SoulissBindingConstants.T57:
                             case SoulissBindingConstants.T58:
                                 logger.debug("Decoding T5n packet");
-                                logger.debug("Float value: {}", getFloatAtSlot(mac, slot));
                                 if (!Float.isNaN(getFloatAtSlot(mac, slot))) {
                                     ((SoulissT5nHandler) handler).setFloatValue(getFloatAtSlot(mac, slot));
                                 }

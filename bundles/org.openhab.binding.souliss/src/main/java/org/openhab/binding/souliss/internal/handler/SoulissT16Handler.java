@@ -28,6 +28,7 @@ import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.types.Command;
 import org.openhab.core.types.PrimitiveType;
 import org.openhab.core.types.RefreshType;
+import org.openhab.core.util.ColorUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,10 +105,11 @@ public class SoulissT16Handler extends SoulissGenericHandler {
                     if (command instanceof PercentType) {
                         updateState(SoulissBindingConstants.LED_COLOR_CHANNEL,
                                 gethsb(t1nRawStateRedByte1, t1nRawStateGreenByte2, t1nRawStateBluByte3));
+                        PercentType rgbVal[] = ColorUtil.hsbToRgbPercent(hsbState);
                         commandSendRgb(SoulissProtocolConstants.SOULISS_T1N_SET,
-                                (byte) (hsbState.getRed().shortValue() * (255.00 / 100)),
-                                (byte) (hsbState.getGreen().shortValue() * (255.00 / 100)),
-                                (byte) (hsbState.getBlue().shortValue() * (255.00 / 100)));
+                                (byte) (rgbVal[0].shortValue() * (255.00 / 100)),
+                                (byte) (rgbVal[1].shortValue() * (255.00 / 100)),
+                                (byte) (rgbVal[2].shortValue() * (255.00 / 100)));
 
                     } else if (command.equals(OnOffType.ON)) {
                         commandSEND(SoulissProtocolConstants.SOULISS_T1N_ON_CMD);
@@ -129,10 +131,11 @@ public class SoulissT16Handler extends SoulissGenericHandler {
                     if (command instanceof HSBType localHsbState) {
                         updateState(SoulissBindingConstants.DIMMER_BRIGHTNESS_CHANNEL,
                                 PercentType.valueOf(hsbState.getBrightness().toString()));
+                        PercentType rgbVal[] = ColorUtil.hsbToRgbPercent(localHsbState);
                         commandSendRgb(SoulissProtocolConstants.SOULISS_T1N_SET,
-                                (byte) (localHsbState.getRed().shortValue() * 255.00 / 100),
-                                (byte) (localHsbState.getGreen().shortValue() * 255.00 / 100),
-                                (byte) (localHsbState.getBlue().shortValue() * 255.00 / 100));
+                                (byte) (rgbVal[0].shortValue() * 255.00 / 100),
+                                (byte) (rgbVal[1].shortValue() * 255.00 / 100),
+                                (byte) (rgbVal[2].shortValue() * 255.00 / 100));
                     }
                     break;
                 default:

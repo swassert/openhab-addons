@@ -12,6 +12,10 @@
  */
 package org.openhab.binding.souliss.internal.handler;
 
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -23,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.souliss.internal.SoulissBindingConstants;
+import org.openhab.binding.souliss.internal.SoulissUDPConstants;
 import org.openhab.binding.souliss.internal.config.GatewayConfig;
 import org.openhab.binding.souliss.internal.discovery.DiscoverResult;
 import org.openhab.binding.souliss.internal.discovery.SoulissGatewayDiscovery;
@@ -53,8 +58,6 @@ public class SoulissGatewayHandler extends BaseBridgeHandler {
 
     private final Logger logger = LoggerFactory.getLogger(SoulissGatewayHandler.class);
 
-    private final CommonCommands commonCommands = new CommonCommands();
-
     private @Nullable ExecutorService udpExecutorService;
 
     private @Nullable Future<?> udpListenerJob;
@@ -77,6 +80,8 @@ public class SoulissGatewayHandler extends BaseBridgeHandler {
     private int countPingKo = 0;
 
     private GatewayConfig gwConfig = new GatewayConfig();
+
+    private @Nullable SendDispatcherRunnable soulissSendDispatcherRunnable;
 
     public GatewayConfig getGwConfig() {
         return gwConfig;
@@ -114,6 +119,10 @@ public class SoulissGatewayHandler extends BaseBridgeHandler {
             localUdpExecutorService.submit(udpServerDefaultPortRunnableClass);
         }
 
+        soulissSendDispatcherRunnable = new SendDispatcherRunnable(this.bridge);
+        scheduler.scheduleWithFixedDelay(soulissSendDispatcherRunnable, 15,
+                SoulissBindingConstants.SEND_DISPATCHER_MIN_DELAY_CYCLE_IN_MILLIS, TimeUnit.MILLISECONDS);
+
         // JOB PING
         var soulissGatewayJobPingRunnable = new SoulissGatewayJobPing(this.bridge);
         pingScheduler = scheduler.scheduleWithFixedDelay(soulissGatewayJobPingRunnable, 2, this.gwConfig.pingInterval,
@@ -127,14 +136,11 @@ public class SoulissGatewayHandler extends BaseBridgeHandler {
         var soulissGatewayJobHealthyRunnable = new SoulissGatewayJobHealthy(this.bridge);
         healthScheduler = scheduler.scheduleWithFixedDelay(soulissGatewayJobHealthyRunnable, 5,
                 this.gwConfig.healthyInterval, TimeUnit.SECONDS);
-
-        var soulissSendDispatcherRunnable = new SendDispatcherRunnable(this.bridge);
-        scheduler.scheduleWithFixedDelay(soulissSendDispatcherRunnable, 15,
-                SoulissBindingConstants.SEND_DISPATCHER_MIN_DELAY_CYCLE_IN_MILLIS, TimeUnit.MILLISECONDS);
     }
 
     public void dbStructAnswerReceived() {
-        commonCommands.sendTypicalRequestFrame(this.gwConfig, nodes);
+        ArrayList<Byte> macacoFrame = CommonCommands.buildTypicalRequestFrame(this.gwConfig, nodes);
+        queueToDispatcher(macacoFrame);
     }
 
     public void setNodes(int nodes) {
@@ -190,14 +196,6 @@ public class SoulissGatewayHandler extends BaseBridgeHandler {
         }
     }
 
-    public void sendSubscription() {
-        if (this.gwConfig.gatewayLanAddress.length() > 0) {
-            int totNodes = getNodes();
-            commonCommands.sendSUBSCRIPTIONframe(this.gwConfig, totNodes);
-        }
-        logger.debug("Sent subscription packet");
-    }
-
     public void setThereIsAThingDetection() {
         thereIsAThingDetection = true;
     }
@@ -212,6 +210,26 @@ public class SoulissGatewayHandler extends BaseBridgeHandler {
 
     public void setDiscoveryService(SoulissGatewayDiscovery discoveryService) {
         this.discoveryService = discoveryService;
+    }
+
+    /*
+     * Queue command to Dispatcher (for securesend retransmission)
+     */
+    public final void queueToDispatcher(ArrayList<Byte> macacoFrame) {
+        ArrayList<Byte> buf = CommonCommands.buildVNetFrame(macacoFrame, gwConfig.gatewayLanAddress,
+                (byte) gwConfig.userIndex, (byte) gwConfig.nodeIndex);
+        byte[] merd = CommonCommands.toByteArray(buf);
+
+        InetAddress serverAddr;
+        try {
+            serverAddr = gwConfig.gatewayWanAddress.isEmpty() ? InetAddress.getByName(gwConfig.gatewayLanAddress)
+                    : InetAddress.getByName(gwConfig.gatewayWanAddress);
+            var packet = new DatagramPacket(merd, merd.length, serverAddr,
+                    SoulissUDPConstants.SOULISS_GATEWAY_DEFAULT_PORT);
+            soulissSendDispatcherRunnable.put(packet, logger);
+        } catch (IOException e) {
+            logger.warn("Error: {} ", e.getMessage());
+        }
     }
 
     @Override

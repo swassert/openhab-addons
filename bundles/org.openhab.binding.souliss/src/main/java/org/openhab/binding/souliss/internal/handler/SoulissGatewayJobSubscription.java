@@ -12,8 +12,11 @@
  */
 package org.openhab.binding.souliss.internal.handler;
 
+import java.util.ArrayList;
+
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.binding.souliss.internal.protocol.CommonCommands;
 import org.openhab.core.thing.Bridge;
 
 /**
@@ -37,8 +40,10 @@ public class SoulissGatewayJobSubscription implements Runnable {
 
     private void sendSubscription() {
         SoulissGatewayHandler localGwHandler = this.gwHandler;
-        if (localGwHandler != null) {
-            localGwHandler.sendSubscription();
+        if ((localGwHandler != null) && (localGwHandler.getGwConfig().gatewayLanAddress.length() > 0)) {
+            ArrayList<Byte> macacoFrame = CommonCommands.buildSUBSCRIPTIONframe(localGwHandler.getGwConfig(),
+                    localGwHandler.getNodes());
+            localGwHandler.queueToDispatcher(macacoFrame);
         }
     }
 }
