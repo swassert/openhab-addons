@@ -12,6 +12,8 @@
  */
 package org.openhab.binding.souliss.internal.handler;
 
+import java.util.ArrayList;
+
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.souliss.internal.protocol.CommonCommands;
@@ -27,8 +29,6 @@ public class SoulissGatewayJobHealthy implements Runnable {
 
     private @Nullable SoulissGatewayHandler gwHandler;
 
-    private final CommonCommands commonCommands = new CommonCommands();
-
     public SoulissGatewayJobHealthy(Bridge bridge) {
         this.gwHandler = (SoulissGatewayHandler) bridge.getHandler();
     }
@@ -42,7 +42,9 @@ public class SoulissGatewayJobHealthy implements Runnable {
         var localGwHandler = this.gwHandler;
         // sending healthy packet
         if ((localGwHandler != null) && (localGwHandler.getGwConfig().gatewayLanAddress.length() > 0)) {
-            commonCommands.sendHealthyRequestFrame(localGwHandler.getGwConfig(), localGwHandler.getNodes());
+            ArrayList<Byte> macacoFrame = CommonCommands.buildHealthyRequestFrame(localGwHandler.getGwConfig(),
+                    localGwHandler.getNodes());
+            localGwHandler.queueToDispatcher(macacoFrame);
             // healthy packet sent
         }
     }

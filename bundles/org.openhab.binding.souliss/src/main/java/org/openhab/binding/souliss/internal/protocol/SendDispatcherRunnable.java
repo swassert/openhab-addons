@@ -14,6 +14,7 @@ package org.openhab.binding.souliss.internal.protocol;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.DatagramChannel;
 import java.util.ArrayList;
@@ -43,11 +44,11 @@ public class SendDispatcherRunnable implements Runnable {
     private final Logger logger = LoggerFactory.getLogger(SendDispatcherRunnable.class);
 
     private @Nullable SoulissGatewayHandler gwHandler;
-    static boolean bPopSuspend = false;
-    protected static ArrayList<PacketStruct> packetsList = new ArrayList<>();
+    boolean bPopSuspend = false;
+    protected ArrayList<PacketStruct> packetsList = new ArrayList<>();
     private long startTime = System.currentTimeMillis();
-    static int iDelay = 0; // equal to 0 if array is empty
-    static int sendMinDelay = 0;
+    int iDelay = 0; // equal to 0 if array is empty
+    int sendMinDelay = 0;
 
     public SendDispatcherRunnable(Bridge bridge) {
         this.gwHandler = (SoulissGatewayHandler) bridge.getHandler();
@@ -56,7 +57,7 @@ public class SendDispatcherRunnable implements Runnable {
     /**
      * Put packet to send in ArrayList PacketList
      */
-    public static synchronized void put(DatagramPacket packetToPUT, Logger logger) {
+    public synchronized void put(DatagramPacket packetToPUT, Logger logger) {
         bPopSuspend = true;
         var bPacchettoGestito = false;
         // I extract the node addressed by the incoming packet. returns -1 if the package is not of the
@@ -134,10 +135,10 @@ public class SendDispatcherRunnable implements Runnable {
 
     @Override
     public void run() {
-        DatagramSocket sender = null;
+        if (checkTime()) {
+            DatagramSocket sender = null;
+            try (var channel = DatagramChannel.open()) {
 
-        try (var channel = DatagramChannel.open()) {
-            if (checkTime()) {
                 PacketStruct sp = pop();
                 if (sp != null) {
                     logger.debug(
@@ -151,7 +152,8 @@ public class SendDispatcherRunnable implements Runnable {
 
                     var localGwHandler = this.gwHandler;
                     if (localGwHandler != null) {
-                        var sa = new InetSocketAddress(localGwHandler.getGwConfig().preferredLocalPortNumber);
+                        InetAddress adress = InetAddress.getByName(localGwHandler.getGwConfig().gatewayLanAddress);
+                        var sa = new InetSocketAddress(adress, localGwHandler.getGwConfig().preferredLocalPortNumber);
                         sender.bind(sa);
                         sender.send(sp.getPacket());
                     }
@@ -162,12 +164,12 @@ public class SendDispatcherRunnable implements Runnable {
                 safeSendCheck();
 
                 resetTime();
-            }
-        } catch (Exception e) {
-            logger.warn("{}", e.getMessage());
-        } finally {
-            if (sender != null && !sender.isClosed()) {
-                sender.close();
+            } catch (Exception e) {
+                logger.warn("{}", e.getMessage());
+            } finally {
+                if (sender != null && !sender.isClosed()) {
+                    sender.close();
+                }
             }
         }
     }

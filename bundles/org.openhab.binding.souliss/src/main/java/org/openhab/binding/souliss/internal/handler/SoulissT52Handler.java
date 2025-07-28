@@ -13,6 +13,7 @@
 package org.openhab.binding.souliss.internal.handler;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.openhab.core.library.types.QuantityType;
 import org.openhab.core.thing.Thing;
 
 /**
@@ -25,7 +26,18 @@ import org.openhab.core.thing.Thing;
 @NonNullByDefault
 public class SoulissT52Handler extends SoulissT5nHandler {
 
+    private float fVal = 0xF;
+
     public SoulissT52Handler(Thing thing) {
         super(thing);
+    }
+
+    @Override
+    public void setFloatValue(float valueOf) {
+        super.setLastStatusStored();
+        if (fVal != valueOf) {
+            this.setState(QuantityType.valueOf(Float.toString(valueOf) + " °C"));
+            fVal = valueOf;
+        }
     }
 }

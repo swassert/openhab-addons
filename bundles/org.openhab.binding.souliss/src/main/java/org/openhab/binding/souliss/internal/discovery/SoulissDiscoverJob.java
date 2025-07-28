@@ -12,6 +12,8 @@
  */
 package org.openhab.binding.souliss.internal.discovery;
 
+import java.util.ArrayList;
+
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.souliss.internal.handler.SoulissGatewayHandler;
@@ -28,8 +30,6 @@ public class SoulissDiscoverJob implements Runnable {
 
     private final Logger logger = LoggerFactory.getLogger(SoulissDiscoverJob.class);
 
-    private final CommonCommands commonCommands = new CommonCommands();
-
     private int resendCounter = 0;
 
     private @Nullable SoulissGatewayHandler gwHandler;
@@ -42,7 +42,9 @@ public class SoulissDiscoverJob implements Runnable {
     public void run() {
         var localGwHandler = this.gwHandler;
         if (localGwHandler != null) {
-            commonCommands.sendDBStructFrame(localGwHandler.getGwConfig());
+            ArrayList<Byte> macacoFrame = CommonCommands.buildDBStructFrame(localGwHandler.getGwConfig());
+            localGwHandler.queueToDispatcher(macacoFrame);
+
             logger.debug("Sending request to gateway for souliss network - Counter={}", resendCounter);
         } else {
             logger.debug("Gateway null - Skipped");

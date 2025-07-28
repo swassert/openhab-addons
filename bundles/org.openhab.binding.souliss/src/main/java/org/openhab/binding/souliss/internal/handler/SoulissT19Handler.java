@@ -61,8 +61,9 @@ public class SoulissT19Handler extends SoulissGenericHandler {
                     }
                     break;
                 case SoulissBindingConstants.DIMMER_BRIGHTNESS_CHANNEL:
-                    updateState(SoulissBindingConstants.DIMMER_BRIGHTNESS_CHANNEL,
-                            PercentType.valueOf(String.valueOf((t1nRawStateBrigthnessByte1 / 255) * 100)));
+                    int rawUnsignedBrightness = t1nRawStateBrigthnessByte1 & 0xFF;
+                    updateState(SoulissBindingConstants.DIMMER_BRIGHTNESS_CHANNEL, PercentType
+                            .valueOf(String.valueOf(Math.round((((double) rawUnsignedBrightness) / 255.00) * 100.00))));
                     break;
                 default:
                     break;
@@ -79,10 +80,10 @@ public class SoulissT19Handler extends SoulissGenericHandler {
                     break;
 
                 case SoulissBindingConstants.DIMMER_BRIGHTNESS_CHANNEL:
-                    if (command instanceof PercentType percentCommand) {
-                        updateState(SoulissBindingConstants.DIMMER_BRIGHTNESS_CHANNEL, percentCommand);
+                    if (command instanceof PercentType) {
+                        updateState(SoulissBindingConstants.DIMMER_BRIGHTNESS_CHANNEL, (PercentType) command);
                         commandSEND(SoulissProtocolConstants.SOULISS_T1N_SET,
-                                (byte) (percentCommand.shortValue() * 255.00 / 100.00));
+                                (byte) (((PercentType) command).shortValue() * 255.00 / 100.00));
                     } else if (command.equals(OnOffType.ON)) {
                         commandSEND(SoulissProtocolConstants.SOULISS_T1N_ON_CMD);
 
@@ -135,11 +136,16 @@ public class SoulissT19Handler extends SoulissGenericHandler {
 
     public void setRawStateDimmerValue(byte dimmerValue) {
         try {
-            if (dimmerValue != t1nRawStateByte0 && dimmerValue >= 0) {
+            super.setLastStatusStored();
+
+            if (dimmerValue != t1nRawStateBrigthnessByte1) {
                 logger.debug("T19, setting dimmer to {}", dimmerValue);
-                updateState(SoulissBindingConstants.DIMMER_BRIGHTNESS_CHANNEL,
-                        PercentType.valueOf(String.valueOf(Math.round(((double) dimmerValue / 255) * 100))));
+                int rawUnsignedBrightness = dimmerValue & 0xFF;
+                updateState(SoulissBindingConstants.DIMMER_BRIGHTNESS_CHANNEL, PercentType
+                        .valueOf(String.valueOf(Math.round((((double) rawUnsignedBrightness) / 255.00) * 100.00))));
+                t1nRawStateBrigthnessByte1 = dimmerValue;
             }
+
         } catch (Exception ex) {
             logger.warn("UUID: {}, had an update dimmer state error:{}", this.getThing().getUID().getAsString(),
                     ex.getMessage());

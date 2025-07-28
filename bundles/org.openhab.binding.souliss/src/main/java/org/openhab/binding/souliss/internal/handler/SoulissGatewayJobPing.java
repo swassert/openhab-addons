@@ -12,6 +12,8 @@
  */
 package org.openhab.binding.souliss.internal.handler;
 
+import java.util.ArrayList;
+
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.souliss.internal.protocol.CommonCommands;
@@ -27,8 +29,6 @@ public class SoulissGatewayJobPing implements Runnable {
 
     private @Nullable SoulissGatewayHandler gwHandler;
 
-    private final CommonCommands commonCommands = new CommonCommands();
-
     public SoulissGatewayJobPing(Bridge bridge) {
         var bridgeHandler = bridge.getHandler();
         if (bridgeHandler != null) {
@@ -40,17 +40,17 @@ public class SoulissGatewayJobPing implements Runnable {
     public void run() {
         SoulissGatewayHandler localGwHandler = this.gwHandler;
         if (localGwHandler != null) {
-            sendPing(localGwHandler);
-
+            sendPing();
             localGwHandler.pingSent();
         }
     }
 
-    private void sendPing(SoulissGatewayHandler soulissGwHandler) {
+    private void sendPing() {
         // sending ping packet
-
-        if (soulissGwHandler.getGwConfig().gatewayLanAddress.length() > 0) {
-            commonCommands.sendPing(soulissGwHandler.getGwConfig());
+        var localGwHandler = this.gwHandler;
+        if (localGwHandler != null && localGwHandler.getGwConfig().gatewayLanAddress.length() > 0) {
+            ArrayList<Byte> macacoFrame = CommonCommands.buildPingFrame(localGwHandler.getGwConfig());
+            localGwHandler.queueToDispatcher(macacoFrame);
             // ping packet sent
         }
     }
