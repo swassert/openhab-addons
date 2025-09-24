@@ -14,7 +14,6 @@ package org.openhab.binding.souliss.internal.protocol;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.DatagramChannel;
 import java.util.ArrayList;
@@ -152,8 +151,7 @@ public class SendDispatcherRunnable implements Runnable {
 
                     var localGwHandler = this.gwHandler;
                     if (localGwHandler != null) {
-                        InetAddress adress = InetAddress.getByName(localGwHandler.getGwConfig().gatewayLanAddress);
-                        var sa = new InetSocketAddress(adress, localGwHandler.getGwConfig().preferredLocalPortNumber);
+                        var sa = new InetSocketAddress(localGwHandler.getGwConfig().preferredLocalPortNumber);
                         sender.bind(sa);
                         sender.send(sp.getPacket());
                     }

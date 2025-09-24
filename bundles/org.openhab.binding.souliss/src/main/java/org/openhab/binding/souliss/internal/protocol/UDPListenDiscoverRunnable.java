@@ -15,7 +15,6 @@ package org.openhab.binding.souliss.internal.protocol;
 import java.net.BindException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
 import java.nio.channels.DatagramChannel;
@@ -66,8 +65,7 @@ public class UDPListenDiscoverRunnable implements Runnable {
 
                 var localGwHandler = this.gwHandler;
                 if (localGwHandler != null) {
-                    InetAddress adress = InetAddress.getByName(localGwHandler.getGwConfig().gatewayLanAddress);
-                    var sa = new InetSocketAddress(adress, localGwHandler.getGwConfig().preferredLocalPortNumber);
+                    var sa = new InetSocketAddress(localGwHandler.getGwConfig().preferredLocalPortNumber);
                     socket.bind(sa);
 
                     var buf = new byte[200];
