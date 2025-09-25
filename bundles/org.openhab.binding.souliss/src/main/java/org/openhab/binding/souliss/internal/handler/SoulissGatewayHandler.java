@@ -27,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.souliss.internal.SoulissBindingConstants;
-import org.openhab.binding.souliss.internal.SoulissUDPConstants;
 import org.openhab.binding.souliss.internal.config.GatewayConfig;
 import org.openhab.binding.souliss.internal.discovery.DiscoverResult;
 import org.openhab.binding.souliss.internal.discovery.SoulissGatewayDiscovery;
@@ -106,7 +105,8 @@ public class SoulissGatewayHandler extends BaseBridgeHandler {
     public void initialize() {
         gwConfig = getConfigAs(GatewayConfig.class);
 
-        logger.debug("Starting UDP server on Souliss Default Port for Topics (Publish&Subcribe)");
+        logger.debug("Starting UDP server on Souliss Port " + gwConfig.preferredLocalPortNumber
+                + " for Topics (Publish&Subcribe)");
 
         // new runnable udp listener
         var udpServerDefaultPortRunnableClass = new UDPListenDiscoverRunnable(this.bridge, this.discoverResult);
@@ -224,8 +224,7 @@ public class SoulissGatewayHandler extends BaseBridgeHandler {
         try {
             serverAddr = gwConfig.gatewayWanAddress.isEmpty() ? InetAddress.getByName(gwConfig.gatewayLanAddress)
                     : InetAddress.getByName(gwConfig.gatewayWanAddress);
-            var packet = new DatagramPacket(merd, merd.length, serverAddr,
-                    SoulissUDPConstants.SOULISS_GATEWAY_DEFAULT_PORT);
+            var packet = new DatagramPacket(merd, merd.length, serverAddr, gwConfig.gatewayPortNumber);
             var localSendDispatcher = this.soulissSendDispatcherRunnable;
             if (localSendDispatcher != null) {
                 localSendDispatcher.put(packet, logger);
