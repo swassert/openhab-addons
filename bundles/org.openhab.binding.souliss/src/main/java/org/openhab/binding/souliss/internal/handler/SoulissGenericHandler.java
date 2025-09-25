@@ -76,6 +76,11 @@ public abstract class SoulissGenericHandler extends BaseThingHandler implements 
     @Override
     public void initialize() {
         try {
+            var b = getBridge();
+            if (b != null) {
+                this.bridge = (SoulissGatewayHandler) b.getHandler();
+            }
+
             var cfg = thing.getConfiguration();
             var props = cfg.getProperties();
 
